@@ -1,0 +1,62 @@
+name: Main Branch Merge CI/CD
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  full-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
+        working-directory: test
+
+      - name: Static code analysis with Semgrep
+        run: |
+          curl -LJO https://github.com/returntocorp/semgrep/releases/latest/download/semgrep-linux-amd64
+          chmod +x semgrep-linux-amd64
+          ./semgrep-linux-amd64 --config=auto
+        working-directory: ${{ github.workspace }}
+
+
+
+      - name: Install Hadolint
+        run: |
+          wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64
+          chmod +x /bin/hadolint
+
+      - name: Lint Dockerfile
+        run: hadolint Dockerfile
+
+      - name: Build Docker image
+        run: |
+          docker build -t $DOCKER_USERNAME/myapp:latest .
+
+      - name: Push Docker image
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker push $DOCKER_USERNAME/myapp:latest
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install trivy
+
+      - name: Scan Docker image with Trivy
+        run: |
+          docker pull $DOCKER_USERNAME/myapp:latest
+          trivy image $DOCKER_USERNAME/myapp:latest
