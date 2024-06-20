@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+    - 'feature/*'
+    - 'main'
+  pull_request:
+    branches:
+    - 'main'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/heads/feature/')"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run unit tests
+      run: npm test
+
+  test-and-security-scan:
+    runs-on: ubuntu-latest
+    if: "github.event_name == 'pull_request' && github.event.action == 'opened'"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run unit tests
+      run: npm test
+
+  full-pipeline:
+    runs-on: ubuntu-latest
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run unit tests
+      run: npm test
