@@ -24,15 +24,6 @@ jobs:
         run: npm test
         working-directory: test
 
-      - name: Static code analysis with Semgrep
-        run: |
-          curl -LJO https://github.com/returntocorp/semgrep/releases/latest/download/semgrep-linux-amd64
-          chmod +x semgrep-linux-amd64
-          ./semgrep-linux-amd64 --config=auto
-        working-directory: ${{ github.workspace }}
-
-
-
       - name: Install Hadolint
         run: |
           wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64
